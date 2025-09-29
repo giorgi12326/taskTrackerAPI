@@ -1,10 +1,10 @@
 package com.example.tasktrackerapi.controller;
 
 import com.example.tasktrackerapi.dtos.ProjectDTO;
+import com.example.tasktrackerapi.exeption.ResourceNotFoundException;
 import com.example.tasktrackerapi.service.ProjectService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
@@ -54,7 +54,7 @@ class ProjectControllerTest {
     }
 
     @Test
-    void testGetProjectById() throws Exception {
+    void testGetProjectById_found() throws Exception {
         ProjectDTO project = new ProjectDTO("Project 1", "Project 1 Description", LocalDateTime.now(), LocalDateTime.now());
 
         when(projectService.getProjectById(1L)).thenReturn(project);
@@ -63,6 +63,16 @@ class ProjectControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Project 1"))
                 .andExpect(jsonPath("$.description").value("Project 1 Description"));
+
+        verify(projectService, times(1)).getProjectById(1L);
+    }
+
+    @Test
+    void testGetProjectById_notFound() throws Exception {
+        when(projectService.getProjectById(1L)).thenThrow(new ResourceNotFoundException());
+
+        mockMvc.perform(get("/api/projects/1"))
+                .andExpect(status().isNotFound());
 
         verify(projectService, times(1)).getProjectById(1L);
     }
@@ -85,7 +95,7 @@ class ProjectControllerTest {
     }
 
     @Test
-    void testUpdateProject() throws Exception {
+    void testUpdateProject_found() throws Exception {
         ProjectDTO input = new ProjectDTO("Project 1", "Project 1 Description", LocalDateTime.now(), LocalDateTime.now());
         ProjectDTO updated = new ProjectDTO("Updated Project", "Updated Description", LocalDateTime.now(), LocalDateTime.now());
 
@@ -102,11 +112,36 @@ class ProjectControllerTest {
     }
 
     @Test
-    void testDeleteProject() throws Exception {
+    void testUpdateProject_notFound() throws Exception {
+        ProjectDTO input = new ProjectDTO("Project 1", "Project 1 Description", LocalDateTime.now(), LocalDateTime.now());
+
+        when(projectService.updateProject(eq(1L), any(ProjectDTO.class)))
+                .thenThrow(new ResourceNotFoundException());
+
+        mockMvc.perform(put("/api/projects/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(input)))
+                .andExpect(status().isNotFound());
+
+        verify(projectService, times(1)).updateProject(eq(1L), any(ProjectDTO.class));
+    }
+
+    @Test
+    void testDeleteProject_found() throws Exception {
         doNothing().when(projectService).deleteProject(1L);
 
         mockMvc.perform(delete("/api/projects/1"))
                 .andExpect(status().isNoContent());
+
+        verify(projectService, times(1)).deleteProject(1L);
+    }
+
+    @Test
+    void testDeleteProject_notFound() throws Exception {
+        doThrow(new ResourceNotFoundException()).when(projectService).deleteProject(1L);
+
+        mockMvc.perform(delete("/api/projects/1"))
+                .andExpect(status().isNotFound());
 
         verify(projectService, times(1)).deleteProject(1L);
     }

@@ -3,6 +3,7 @@ package com.example.tasktrackerapi.controller;
 import com.example.tasktrackerapi.dtos.TaskDTO;
 import com.example.tasktrackerapi.entity.TaskPriority;
 import com.example.tasktrackerapi.entity.TaskStatus;
+import com.example.tasktrackerapi.exeption.ResourceNotFoundException;
 import com.example.tasktrackerapi.service.TaskService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -19,10 +20,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -121,4 +119,37 @@ class TaskControllerTest {
 
         verify(taskService, times(1)).deleteTask(1L);
     }
+
+    @Test
+    void testGetTaskById_notFound() throws Exception {
+        when(taskService.getTaskById(1L)).thenThrow(new ResourceNotFoundException());
+
+        mockMvc.perform(get("/api/tasks/1"))
+                .andExpect(status().isNotFound()); // assuming you have @ControllerAdvice handling ResourceNotFoundException
+        verify(taskService, times(1)).getTaskById(1L);
+    }
+
+    @Test
+    void testUpdateTask_notFound() throws Exception {
+        TaskDTO input = new TaskDTO("Updated Task", "Updated Description", TaskStatus.DONE,
+                LocalDate.now().plusDays(2), TaskPriority.HIGH, null, null);
+
+        when(taskService.updateTask(eq(1L), any(TaskDTO.class))).thenThrow(new ResourceNotFoundException());
+
+        mockMvc.perform(put("/api/tasks/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(input)))
+                .andExpect(status().isNotFound());
+        verify(taskService, times(1)).updateTask(eq(1L), any(TaskDTO.class));
+    }
+
+    @Test
+    void testDeleteTask_notFound() throws Exception {
+        doThrow(new ResourceNotFoundException()).when(taskService).deleteTask(1L);
+
+        mockMvc.perform(delete("/api/tasks/1"))
+                .andExpect(status().isNotFound());
+        verify(taskService, times(1)).deleteTask(1L);
+    }
+
 }

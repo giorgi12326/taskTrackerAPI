@@ -33,6 +33,10 @@ public class Task {
     @Column(nullable = false)
     private TaskPriority priority;
 
+    @ManyToOne
+    @JoinColumn(name = "project_id", nullable = false)
+    private Project project;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createDate;
 

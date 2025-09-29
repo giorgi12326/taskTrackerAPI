@@ -9,12 +9,8 @@ import jakarta.persistence.Enumerated;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import com.example.tasktrackerapi.entity.TaskPriority;
-import com.example.tasktrackerapi.entity.TaskStatus;
 import jakarta.validation.constraints.*;
 import lombok.*;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor

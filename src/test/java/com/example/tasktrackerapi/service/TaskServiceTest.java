@@ -138,4 +138,34 @@ class TaskServiceTest {
         verify(taskRepository).delete(task);
     }
 
+    @Test
+    void testUpdateTask_found() {
+        TaskDTO dto = new TaskDTO("Updated Task", "Updated Description", TaskStatus.DONE,
+                LocalDate.now().plusDays(2), TaskPriority.LOW, null, null);
+        Task entity = new Task(1L, "Task 1", "Description 1", TaskStatus.TODO,
+                LocalDate.now().plusDays(5), TaskPriority.HIGH, LocalDateTime.now(), LocalDateTime.now());
+        Task updatedEntity = new Task(1L, "Updated Task", "Updated Description", TaskStatus.DONE,
+                LocalDate.now().plusDays(2), TaskPriority.LOW, LocalDateTime.now(), LocalDateTime.now());
+        TaskDTO outputDto = new TaskDTO("Updated Task", "Updated Description", TaskStatus.DONE,
+                LocalDate.now().plusDays(2), TaskPriority.LOW, LocalDateTime.now(), LocalDateTime.now());
+
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(entity));
+        doNothing().when(taskMapper).updateEntity(dto, entity);
+        when(taskRepository.save(entity)).thenReturn(updatedEntity);
+        when(taskMapper.toDto(updatedEntity)).thenReturn(outputDto);
+
+        TaskDTO result = taskService.updateTask(1L, dto);
+
+        assertThat(result.getTitle()).isEqualTo("Updated Task");
+        assertThat(result.getDescription()).isEqualTo("Updated Description");
+        assertThat(result.getStatus()).isEqualTo(TaskStatus.DONE);
+        assertThat(result.getPriority()).isEqualTo(TaskPriority.LOW);
+
+        verify(taskRepository).findById(1L);
+        verify(taskMapper).updateEntity(dto, entity);
+        verify(taskRepository).save(entity);
+        verify(taskMapper).toDto(updatedEntity);
+    }
+
+
 }

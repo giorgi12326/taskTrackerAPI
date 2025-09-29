@@ -1,6 +1,7 @@
 package com.example.tasktrackerapi.dtos;
 
 
+import com.example.tasktrackerapi.entity.Task;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -9,6 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -25,5 +27,8 @@ public class ProjectDTO {
     private LocalDateTime createDate;
 
     private LocalDateTime updateDate;
+
+    private List<TaskDTO> tasks;
+
 
 }
