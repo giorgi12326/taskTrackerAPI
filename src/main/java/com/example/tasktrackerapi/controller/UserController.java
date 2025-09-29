@@ -1,6 +1,8 @@
 package com.example.tasktrackerapi.controller;
 
+import com.example.tasktrackerapi.dtos.AuthResponseDTO;
 import com.example.tasktrackerapi.dtos.UserDTO;
+import com.example.tasktrackerapi.dtos.UserLoginDTO;
 import com.example.tasktrackerapi.entity.User;
 import com.example.tasktrackerapi.exeption.AuthenticationFailedException;
 import com.example.tasktrackerapi.mapper.UserMapper;
@@ -25,11 +27,11 @@ public class UserController {
     private final UserMapper userMapper;
 
     @PostMapping("/login")
-    public String login(@RequestBody UserDTO userDto) {
+    public AuthResponseDTO login(@RequestBody UserLoginDTO userDto) {
         try {
             authManager.authenticate(new UsernamePasswordAuthenticationToken(userDto.getUsername(), userDto.getPassword()));
             User user = (User) userService.loadUserByUsername(userDto.getUsername());
-            return jwtUtil.generateToken(user.getUsername());
+            return new AuthResponseDTO(jwtUtil.generateToken(user.getUsername()),"Bearer");
         } catch (AuthenticationException e) {
             throw new AuthenticationFailedException("Invalid credentials");
         }
