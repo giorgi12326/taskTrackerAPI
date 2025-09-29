@@ -53,7 +53,7 @@ public class TaskService {
     public TaskDTO getTaskById(Long id) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(()-> new ResourceNotFoundException("Task not found with id " + id));
-        checkTaskAccessProjectOrTaskOwner(task);
+        ProjectOrTaskOwnerOrAdminValidation(task);
 
         return taskMapper.toDto(task);
     }
@@ -61,7 +61,7 @@ public class TaskService {
     @Transactional
     public TaskDTO createTask(TaskCreateDTO taskDTO) {
         Task task = taskMapper.toEntity(taskDTO);
-        checkTaskAccessProjectOrTaskOwner(task);
+        ProjectOrTaskOwnerOrAdminValidation(task);
 
         Project project = projectRepository.findById(taskDTO.getProjectId())
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id " + taskDTO.getProjectId()));
@@ -80,7 +80,7 @@ public class TaskService {
     public TaskDTO updateTask(Long id, TaskCreateDTO taskDTO) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(()-> new ResourceNotFoundException("Task not found with id " + id));
-        checkTaskAccessProjectOrTaskOwner(task);
+        ProjectOrTaskOwnerOrAdminValidation(task);
 
         if (taskDTO.getProjectId() != null) {
             Project project = projectRepository.findById(taskDTO.getProjectId())
@@ -106,13 +106,13 @@ public class TaskService {
     public void deleteTask(Long id) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(()-> new ResourceNotFoundException("Task not found with id " + id));
-        checkTaskAccessProjectOrTaskOwner(task);
+        ProjectOrTaskOwnerOrAdminValidation(task);
 
         taskRepository.delete(task);
     }
 
     public TaskDTO assignTaskToUser(Long taskId, Long userId) {
-        isAdminOrManager(userId);
+        adminOrManagerValidation(userId);
 
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found  with id " + taskId));
@@ -163,7 +163,7 @@ public class TaskService {
         return new PageImpl<>(filtered, pageable, filtered.size());
     }
 
-    private void checkTaskAccessProjectOrTaskOwner(Task task) {
+    private void ProjectOrTaskOwnerOrAdminValidation(Task task) {
         String currentUserEmail = userService.getCurrentUserEmail();
         if (!projectOrTaskOwnerAccess(task, currentUserEmail)) {
             throw new AuthorizationFailedException("Not allowed to access this task");
@@ -177,7 +177,7 @@ public class TaskService {
                         user.getRole().equals(User.Role.ADMIN));
     }
 
-    private void isAdminOrManager(Long userId) {
+    private void adminOrManagerValidation(Long userId) {
         String currentUser = userService.getCurrentUserEmail();
         User user = userRepository.findByEmail(currentUser)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found  with id " + userId));

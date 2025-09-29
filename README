@@ -1,0 +1,101 @@
+# TaskTracker API
+
+## Getting Started
+
+1. Clone the repository:
+git clone https://github.com/giorgi12326/taskTrackerAPI.git
+cd taskTrackerAPI
+
+2. Run the application:
+mvn spring-boot:run
+or run the main class from your IDE.
+
+3. Import Postman collection:
+Open Postman and import the file `postman.json` from the project root.
+
+## How Authentication Works
+
+The TaskTracker API uses **JWT (JSON Web Token) based authentication**:
+
+4. **Register**
+   - Users create an account using `/api/auth/register`.
+   - This stores their credentials and role (USER, MANAGER, ADMIN) in the database.
+
+5. **Login**
+   - Users authenticate via `/api/auth/login` by providing email and password.
+   - If valid, the server generates a **JWT token** and returns it in the response.
+
+6. **Token Usage**
+   - The JWT token must be included in the `Authorization` header for all protected API requests:
+     ```
+     Authorization: Bearer <token>
+     ```
+   - The token is validated by the `JwtAuthenticationFilter` before accessing endpoints.
+
+7. **Role-Based Access Control**
+   - The system checks the role encoded in the JWT to determine if the user can access a specific endpoint.
+   - Example rules:
+     - Only **ADMIN** can perform certain actions on any project/task.
+     - **MANAGER** can assign tasks and manage owned projects.
+     - **USER** can access only tasks they own or are assigned to.
+
+8. **Token Expiration**
+   - JWT tokens may have an expiration time. Users must log in again after expiration to get a new token.
+
+
+9. Optional: View Swagger UI documentation:
+Open your browser and go to `http://localhost:8080/swagger-ui/index.html` to see all endpoints and their request/response models.
+
+Now you can test all endpoints (Projects, Tasks, etc.) as described in the Postman collection.
+
+
+### Access Control Methods
+
+1. **ProjectOrTaskOwnerOrAdminValidation(Task task)**
+   - Ensures that the currently logged-in user is either:
+     - The **owner of the project** the task belongs to,
+     - The **assigned user** of the task, or
+     - An **ADMIN**.
+   - If none of these conditions are met, an `AuthorizationFailedException` is thrown.
+   - Uses the helper method `projectOrTaskOwnerAccess` to check these conditions.
+
+2. **projectOrTaskOwnerAccess(Task task, String currentUserEmail)**
+   - Returns `true` if the current user is allowed to access the task based on ownership or ADMIN role.
+   - Checks:
+     - Project owner email matches current user,
+     - Assigned user email matches current user,
+     - Or the current user has the **ADMIN** role.
+   - Returns `false` if none of these conditions are satisfied.
+
+3. **adminOrManagerValidation(Long userId)**
+   - Ensures that only users with **MANAGER** or **ADMIN** roles can perform certain actions, e.g., assigning tasks to other users.
+   - Throws `AuthorizationFailedException` if the current user is not a MANAGER or ADMIN.
+
+These methods enforce **role-based access control** and ensure users can only perform actions consistent with their assigned roles.
+
+====================================================================================================================================
+
+API Endpoint Summary
+=====================Authentication=========================
+Method	Endpoint	Description	Roles
+POST	/api/auth/register	Register a new user	Public
+POST	/api/auth/login	Login and receive JWT token	Public
+
+======================PROJECTS==================
+Method	Endpoint	Description	Roles
+GET	/api/projects	Get all projects	MANAGER, ADMIN
+GET	/api/projects/{id}	Get project by ID	MANAGER, ADMIN
+POST	/api/projects	Create a new project	MANAGER, ADMIN
+PUT	/api/projects/{id}	Update an existing project by ID	MANAGER, ADMIN
+DELETE	/api/projects/{id}	Delete a project by ID	ADMIN
+
+====================TASKS=========================
+Method	Endpoint	Description	Roles
+GET	/api/tasks	Get all tasks with optional pagination, status, and priority filters	USER, MANAGER, ADMIN
+GET	/api/tasks/{id}	Get task by ID	USER, MANAGER, ADMIN
+POST	/api/tasks	Create a new task	MANAGER, ADMIN
+PUT	/api/tasks/{id}	Update an existing task by ID	MANAGER, ADMIN
+DELETE	/api/tasks/{id}	Delete a task by ID	ADMIN
+POST	/api/tasks/assign	Assign a task to a user	MANAGER, ADMIN
+PUT	/api/tasks/{id}/status	Update the status of a task	Assigned USER, MANAGER, ADMIN
+GET	/api/tasks/user/{userId}	Get tasks assigned to a specific user with optional filters	USER, MANAGER, ADMIN

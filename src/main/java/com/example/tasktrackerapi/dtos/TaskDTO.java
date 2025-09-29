@@ -2,9 +2,6 @@ package com.example.tasktrackerapi.dtos;
 
 import com.example.tasktrackerapi.entity.TaskPriority;
 import com.example.tasktrackerapi.entity.TaskStatus;
-import jakarta.persistence.Column;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
