@@ -1,5 +1,6 @@
 package com.example.tasktrackerapi.mapper;
 
+import com.example.tasktrackerapi.dtos.ProjectCreateDTO;
 import com.example.tasktrackerapi.dtos.ProjectDTO;
 import com.example.tasktrackerapi.entity.Project;
 import org.mapstruct.Mapper;
@@ -7,7 +8,7 @@ import org.mapstruct.MappingTarget;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", uses = {TaskMapper.class})
+@Mapper(componentModel = "spring", uses = {TaskMapper.class,UserMapper.class})
 public interface ProjectMapper {
 
     ProjectDTO toDto(Project project);
@@ -16,6 +17,10 @@ public interface ProjectMapper {
 
     Project toEntity(ProjectDTO projectDTO);
 
+    Project toEntity(ProjectCreateDTO projectDTO);
+
     void updateEntity(ProjectDTO dto, @MappingTarget Project entity);
+
+    void updateEntity(ProjectCreateDTO dto, @MappingTarget Project entity);
 
 }

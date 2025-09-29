@@ -37,6 +37,10 @@ public class Task {
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
 
+    @ManyToOne
+    @JoinColumn(name = "assigned_user_id")
+    private User assignedUser;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createDate;
 

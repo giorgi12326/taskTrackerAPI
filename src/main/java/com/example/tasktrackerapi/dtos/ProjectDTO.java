@@ -1,11 +1,8 @@
 package com.example.tasktrackerapi.dtos;
 
-
-import com.example.tasktrackerapi.entity.Task;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -30,5 +27,6 @@ public class ProjectDTO {
 
     private List<TaskDTO> tasks;
 
+    private UserResponseDTO owner;
 
 }

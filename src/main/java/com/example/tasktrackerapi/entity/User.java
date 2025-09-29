@@ -7,7 +7,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -22,14 +24,19 @@ public class User implements UserDetails {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String email; // used as username
+    private String email;
 
     @Column(nullable = false)
-    private String password; // hashed
+    private String password;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private Role role;
+
+    @OneToMany(mappedBy = "owner")
+    private Set<Project> ownedProjects = new HashSet<>();
+
+    @OneToMany(mappedBy = "assignedUser")
+    private Set<Task> tasks = new HashSet<>();
 
     private LocalDateTime createDate;
 

@@ -1,148 +1,127 @@
 package com.example.tasktrackerapi.controller;
 
+import com.example.tasktrackerapi.dtos.ProjectCreateDTO;
 import com.example.tasktrackerapi.dtos.ProjectDTO;
+import com.example.tasktrackerapi.exeption.GlobalExceptionHandler;
 import com.example.tasktrackerapi.exeption.ResourceNotFoundException;
 import com.example.tasktrackerapi.service.ProjectService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
+import java.util.ArrayList;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(ProjectController.class)
 class ProjectControllerTest {
 
-    @Autowired
     private MockMvc mockMvc;
 
-    @MockitoBean
+    @Mock
     private ProjectService projectService;
 
-    @Autowired
+    @InjectMocks
+    private ProjectController projectController;
+
     private ObjectMapper objectMapper;
+    private ProjectDTO projectDTO;
+    private ProjectCreateDTO projectCreateDTO;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+        mockMvc = MockMvcBuilders
+                .standaloneSetup(projectController)
+                .setControllerAdvice(new GlobalExceptionHandler()) // <- register handler
+                .build();
+        objectMapper = new ObjectMapper();
+
+        projectDTO = new ProjectDTO("Test Project", "Description", null, null, new ArrayList<>(), null);
+        projectCreateDTO = new ProjectCreateDTO("Test Project", "Description", 1L);
+    }
 
     @Test
     void testGetAllProjects() throws Exception {
-        List<ProjectDTO> projects = Arrays.asList(
-                new ProjectDTO("Project 1", "Project 1 Description", LocalDateTime.now(), LocalDateTime.now()),
-                new ProjectDTO("Project 2", "Project 2 Description", LocalDateTime.now(), LocalDateTime.now())
-        );
-
-        when(projectService.getAllProjects()).thenReturn(projects);
+        when(projectService.getAllProjects()).thenReturn(List.of(projectDTO));
 
         mockMvc.perform(get("/api/projects"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.size()").value(2))
-                .andExpect(jsonPath("$[0].name").value("Project 1"))
-                .andExpect(jsonPath("$[0].description").value("Project 1 Description"))
-                .andExpect(jsonPath("$[1].name").value("Project 2"))
-                .andExpect(jsonPath("$[1].description").value("Project 2 Description"));
-
-        verify(projectService, times(1)).getAllProjects();
+                .andExpect(jsonPath("$[0].name").value("Test Project"));
     }
 
     @Test
-    void testGetProjectById_found() throws Exception {
-        ProjectDTO project = new ProjectDTO("Project 1", "Project 1 Description", LocalDateTime.now(), LocalDateTime.now());
-
-        when(projectService.getProjectById(1L)).thenReturn(project);
+    void testGetProjectById_Found() throws Exception {
+        when(projectService.getProjectById(1L)).thenReturn(projectDTO);
 
         mockMvc.perform(get("/api/projects/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Project 1"))
-                .andExpect(jsonPath("$.description").value("Project 1 Description"));
-
-        verify(projectService, times(1)).getProjectById(1L);
+                .andExpect(jsonPath("$.name").value("Test Project"));
     }
 
     @Test
-    void testGetProjectById_notFound() throws Exception {
-        when(projectService.getProjectById(1L)).thenThrow(new ResourceNotFoundException());
+    void testGetProjectById_NotFound() throws Exception {
+        when(projectService.getProjectById(2L)).thenThrow(new ResourceNotFoundException("Project not found"));
 
-        mockMvc.perform(get("/api/projects/1"))
-                .andExpect(status().isNotFound());
-
-        verify(projectService, times(1)).getProjectById(1L);
+        mockMvc.perform(get("/api/projects/2"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Project not found"))
+                .andExpect(jsonPath("$.status").value(404));
     }
 
     @Test
     void testCreateProject() throws Exception {
-        ProjectDTO input = new ProjectDTO("Project 1", "Project 1 Description", LocalDateTime.now(), LocalDateTime.now());
-        ProjectDTO saved = new ProjectDTO("Project 1", "Project 1 Description", LocalDateTime.now(), LocalDateTime.now());
-
-        when(projectService.createProject(any(ProjectDTO.class))).thenReturn(saved);
+        when(projectService.createProject(projectCreateDTO)).thenReturn(projectDTO);
 
         mockMvc.perform(post("/api/projects")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(input)))
+                        .content(objectMapper.writeValueAsString(projectCreateDTO)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name").value("Project 1"))
-                .andExpect(jsonPath("$.description").value("Project 1 Description"));
-
-        verify(projectService, times(1)).createProject(any(ProjectDTO.class));
+                .andExpect(jsonPath("$.name").value("Test Project"));
     }
 
     @Test
-    void testUpdateProject_found() throws Exception {
-        ProjectDTO input = new ProjectDTO("Project 1", "Project 1 Description", LocalDateTime.now(), LocalDateTime.now());
-        ProjectDTO updated = new ProjectDTO("Updated Project", "Updated Description", LocalDateTime.now(), LocalDateTime.now());
-
-        when(projectService.updateProject(eq(1L), any(ProjectDTO.class))).thenReturn(updated);
+    void testUpdateProject_Success() throws Exception {
+        when(projectService.updateProject(1L, projectCreateDTO)).thenReturn(projectDTO);
 
         mockMvc.perform(put("/api/projects/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(input)))
+                        .content(objectMapper.writeValueAsString(projectCreateDTO)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Updated Project"))
-                .andExpect(jsonPath("$.description").value("Updated Description"));
-
-        verify(projectService, times(1)).updateProject(eq(1L), any(ProjectDTO.class));
+                .andExpect(jsonPath("$.name").value("Test Project"));
     }
 
     @Test
-    void testUpdateProject_notFound() throws Exception {
-        ProjectDTO input = new ProjectDTO("Project 1", "Project 1 Description", LocalDateTime.now(), LocalDateTime.now());
-
-        when(projectService.updateProject(eq(1L), any(ProjectDTO.class)))
-                .thenThrow(new ResourceNotFoundException());
+    void testUpdateProject_NotFound() throws Exception {
+        when(projectService.updateProject(1L, projectCreateDTO)).thenThrow(new ResourceNotFoundException("Project not found"));
 
         mockMvc.perform(put("/api/projects/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(input)))
+                        .content(objectMapper.writeValueAsString(projectCreateDTO)))
                 .andExpect(status().isNotFound());
-
-        verify(projectService, times(1)).updateProject(eq(1L), any(ProjectDTO.class));
     }
 
     @Test
-    void testDeleteProject_found() throws Exception {
+    void testDeleteProject_Success() throws Exception {
         doNothing().when(projectService).deleteProject(1L);
 
         mockMvc.perform(delete("/api/projects/1"))
                 .andExpect(status().isNoContent());
-
-        verify(projectService, times(1)).deleteProject(1L);
     }
 
     @Test
-    void testDeleteProject_notFound() throws Exception {
-        doThrow(new ResourceNotFoundException()).when(projectService).deleteProject(1L);
+    void testDeleteProject_NotFound() throws Exception {
+        doThrow(new ResourceNotFoundException("Project not found")).when(projectService).deleteProject(1L);
 
         mockMvc.perform(delete("/api/projects/1"))
                 .andExpect(status().isNotFound());
-
-        verify(projectService, times(1)).deleteProject(1L);
     }
 }

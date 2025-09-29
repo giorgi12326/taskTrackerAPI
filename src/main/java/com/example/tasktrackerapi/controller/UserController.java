@@ -1,6 +1,9 @@
 package com.example.tasktrackerapi.controller;
 
+import com.example.tasktrackerapi.dtos.UserDTO;
 import com.example.tasktrackerapi.entity.User;
+import com.example.tasktrackerapi.exeption.AuthenticationFailedException;
+import com.example.tasktrackerapi.mapper.UserMapper;
 import com.example.tasktrackerapi.security.JwtUtil;
 import com.example.tasktrackerapi.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -19,21 +22,29 @@ public class UserController {
     private final JwtUtil jwtUtil;
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
+    private final UserMapper userMapper;
 
     @PostMapping("/login")
-    public String login(@RequestParam String email, @RequestParam String password) {
+    public String login(@RequestBody UserDTO userDto) {
         try {
-            authManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
-            User user = (User) userService.loadUserByUsername(email);
-            return jwtUtil.generateToken(user.getEmail());
+            authManager.authenticate(new UsernamePasswordAuthenticationToken(userDto.getUsername(), userDto.getPassword()));
+            User user = (User) userService.loadUserByUsername(userDto.getUsername());
+            return jwtUtil.generateToken(user.getUsername());
         } catch (AuthenticationException e) {
-            throw new RuntimeException("Invalid credentials");
+            throw new AuthenticationFailedException("Invalid credentials");
         }
     }
 
     @PostMapping("/register")
-    public User register(@RequestBody User user) {
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userService.saveUser(user);
+    public User register(@RequestBody UserDTO userDTO) {
+        userDTO.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+
+        User user1 = new User();
+        user1.setEmail(userDTO.getUsername());
+        user1.setPassword(userDTO.getPassword());
+        user1.setRole(userDTO.getRole());
+        userMapper.toEntity(userDTO);
+
+        return userService.saveUser(user1);
     }
 }

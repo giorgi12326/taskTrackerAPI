@@ -31,6 +31,10 @@ public class Project {
     @JsonIgnore
     private List<Task> tasks;
 
+    @ManyToOne
+    @JoinColumn(name = "owner_id")
+    private User owner;
+
     @PrePersist
     protected void onCreate() {
         createDate = LocalDateTime.now();

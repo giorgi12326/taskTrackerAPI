@@ -2,22 +2,20 @@ package com.example.tasktrackerapi.dtos;
 
 import com.example.tasktrackerapi.entity.TaskPriority;
 import com.example.tasktrackerapi.entity.TaskStatus;
-import jakarta.persistence.Column;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.validation.constraints.FutureOrPresent;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
-import jakarta.validation.constraints.*;
-import lombok.*;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter
+@Setter
 @Builder
-public class TaskDTO {
-
+public class TaskCreateDTO {
     @NotBlank(message = "Title is required")
     @Size(max = 255, message = "Title cannot exceed 255 characters")
     private String title;
@@ -37,8 +35,4 @@ public class TaskDTO {
     private Long projectId;
 
     private UserResponseDTO assignedUser;
-
-    private LocalDateTime createDate;
-
-    private LocalDateTime updateDate;
 }

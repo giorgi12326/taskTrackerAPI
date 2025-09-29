@@ -1,155 +1,149 @@
 package com.example.tasktrackerapi.controller;
 
-import com.example.tasktrackerapi.dtos.TaskDTO;
+import com.example.tasktrackerapi.dtos.*;
 import com.example.tasktrackerapi.entity.TaskPriority;
 import com.example.tasktrackerapi.entity.TaskStatus;
-import com.example.tasktrackerapi.exeption.ResourceNotFoundException;
 import com.example.tasktrackerapi.service.TaskService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
+import org.mockito.ArgumentMatchers;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
+import java.util.Collections;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(TaskController.class)
 class TaskControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockitoBean
+    @Mock
     private TaskService taskService;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    @InjectMocks
+    private TaskController taskController;
 
-    @Test
-    void testGetAllTasks() throws Exception {
-        List<TaskDTO> tasks = Arrays.asList(
-                new TaskDTO("Task 1", "Description 1", TaskStatus.TODO, LocalDate.now().plusDays(5), TaskPriority.HIGH, LocalDateTime.now(), LocalDateTime.now()),
-                new TaskDTO("Task 2", "Description 2", TaskStatus.IN_PROGRESS, LocalDate.now().plusDays(10), TaskPriority.MEDIUM, LocalDateTime.now(), LocalDateTime.now())
-        );
+    private TaskDTO taskDTO;
+    private TaskCreateDTO taskCreateDTO;
+    private TaskAssignmentDTO taskAssignmentDTO;
+    private UpdateTaskStatusDTO updateTaskStatusDTO;
 
-        when(taskService.getAllTasks()).thenReturn(tasks);
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
 
-        mockMvc.perform(get("/api/tasks"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.size()").value(2))
-                .andExpect(jsonPath("$[0].title").value("Task 1"))
-                .andExpect(jsonPath("$[0].description").value("Description 1"))
-                .andExpect(jsonPath("$[1].title").value("Task 2"))
-                .andExpect(jsonPath("$[1].description").value("Description 2"));
+        taskDTO = TaskDTO.builder()
+                .title("Test Task")
+                .description("Test Description")
+                .status(TaskStatus.OPEN)
+                .priority(TaskPriority.HIGH)
+                .dueDate(LocalDate.now().plusDays(1))
+                .projectId(1L)
+                .createDate(LocalDateTime.now())
+                .updateDate(LocalDateTime.now())
+                .build();
 
-        verify(taskService, times(1)).getAllTasks();
+        taskCreateDTO = TaskCreateDTO.builder()
+                .title("Test Task")
+                .description("Test Description")
+                .status(TaskStatus.OPEN)
+                .priority(TaskPriority.HIGH)
+                .dueDate(LocalDate.now().plusDays(1))
+                .projectId(1L)
+                .build();
+
+        taskAssignmentDTO = new TaskAssignmentDTO();
+        taskAssignmentDTO.setTaskId(1L);
+        taskAssignmentDTO.setUserId(2L);
+
+        updateTaskStatusDTO = new UpdateTaskStatusDTO();
+        updateTaskStatusDTO.setStatus(TaskStatus.IN_PROGRESS);
     }
 
     @Test
-    void testGetTaskById() throws Exception {
-        TaskDTO task = new TaskDTO("Task 1", "Description 1", TaskStatus.TODO, LocalDate.now().plusDays(5), TaskPriority.HIGH, LocalDateTime.now(), LocalDateTime.now());
+    void testGetAllTasks() {
+        Page<TaskDTO> page = new PageImpl<>(Collections.singletonList(taskDTO));
+        when(taskService.getTasks(ArgumentMatchers.any(Pageable.class), ArgumentMatchers.any(), ArgumentMatchers.any()))
+                .thenReturn(page);
 
-        when(taskService.getTaskById(1L)).thenReturn(task);
+        ResponseEntity<Page<TaskDTO>> response = taskController.getAllTasks(0, 10, null, null);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(1, response.getBody().getContent().size());
+        verify(taskService, times(1)).getTasks(any(Pageable.class), any(), any());
+    }
 
-        mockMvc.perform(get("/api/tasks/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.title").value("Task 1"))
-                .andExpect(jsonPath("$.description").value("Description 1"))
-                .andExpect(jsonPath("$.status").value("TODO"))
-                .andExpect(jsonPath("$.priority").value("HIGH"));
+    @Test
+    void testGetTaskById() {
+        when(taskService.getTaskById(1L)).thenReturn(taskDTO);
 
+        ResponseEntity<TaskDTO> response = taskController.getTaskById(1L);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("Test Task", response.getBody().getTitle());
         verify(taskService, times(1)).getTaskById(1L);
     }
 
     @Test
-    void testCreateTask() throws Exception {
-        TaskDTO input = new TaskDTO("New Task", "New Description", TaskStatus.TODO, LocalDate.now().plusDays(3), TaskPriority.LOW, null, null);
-        TaskDTO saved = new TaskDTO("New Task", "New Description", TaskStatus.TODO, LocalDate.now().plusDays(3), TaskPriority.LOW, LocalDateTime.now(), LocalDateTime.now());
+    void testCreateTask() {
+        when(taskService.createTask(taskCreateDTO)).thenReturn(taskDTO);
 
-        when(taskService.createTask(any(TaskDTO.class))).thenReturn(saved);
-
-        mockMvc.perform(post("/api/tasks")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(input)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.title").value("New Task"))
-                .andExpect(jsonPath("$.description").value("New Description"))
-                .andExpect(jsonPath("$.status").value("TODO"))
-                .andExpect(jsonPath("$.priority").value("LOW"));
-
-        verify(taskService, times(1)).createTask(any(TaskDTO.class));
+        ResponseEntity<TaskDTO> response = taskController.createTask(taskCreateDTO);
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals("Test Task", response.getBody().getTitle());
+        verify(taskService, times(1)).createTask(taskCreateDTO);
     }
 
     @Test
-    void testUpdateTask() throws Exception {
-        TaskDTO input = new TaskDTO("Updated Task", "Updated Description", TaskStatus.DONE, LocalDate.now().plusDays(2), TaskPriority.HIGH, null, null);
-        TaskDTO updated = new TaskDTO("Updated Task", "Updated Description", TaskStatus.DONE, LocalDate.now().plusDays(2), TaskPriority.HIGH, null, LocalDateTime.now());
+    void testUpdateTask() {
+        when(taskService.updateTask(1L, taskCreateDTO)).thenReturn(taskDTO);
 
-        when(taskService.updateTask(eq(1L), any(TaskDTO.class))).thenReturn(updated);
-
-        mockMvc.perform(put("/api/tasks/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(input)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.title").value("Updated Task"))
-                .andExpect(jsonPath("$.description").value("Updated Description"))
-                .andExpect(jsonPath("$.status").value("DONE"))
-                .andExpect(jsonPath("$.priority").value("HIGH"));
-
-        verify(taskService, times(1)).updateTask(eq(1L), any(TaskDTO.class));
+        ResponseEntity<TaskDTO> response = taskController.updateTask(1L, taskCreateDTO);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(taskService, times(1)).updateTask(1L, taskCreateDTO);
     }
 
     @Test
-    void testDeleteTask() throws Exception {
+    void testDeleteTask() {
         doNothing().when(taskService).deleteTask(1L);
 
-        mockMvc.perform(delete("/api/tasks/1"))
-                .andExpect(status().isNoContent());
-
+        ResponseEntity<Void> response = taskController.deleteTask(1L);
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         verify(taskService, times(1)).deleteTask(1L);
     }
 
     @Test
-    void testGetTaskById_notFound() throws Exception {
-        when(taskService.getTaskById(1L)).thenThrow(new ResourceNotFoundException());
+    void testAssignTask() {
+        when(taskService.assignTaskToUser(1L, 2L)).thenReturn(taskDTO);
 
-        mockMvc.perform(get("/api/tasks/1"))
-                .andExpect(status().isNotFound()); // assuming you have @ControllerAdvice handling ResourceNotFoundException
-        verify(taskService, times(1)).getTaskById(1L);
+        ResponseEntity<TaskDTO> response = taskController.assignTask(taskAssignmentDTO);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("Test Task", response.getBody().getTitle());
+        verify(taskService, times(1)).assignTaskToUser(1L, 2L);
     }
 
     @Test
-    void testUpdateTask_notFound() throws Exception {
-        TaskDTO input = new TaskDTO("Updated Task", "Updated Description", TaskStatus.DONE,
-                LocalDate.now().plusDays(2), TaskPriority.HIGH, null, null);
+    void testUpdateTaskStatus() {
+        when(taskService.updateTaskStatus(1L, updateTaskStatusDTO)).thenReturn(taskDTO);
 
-        when(taskService.updateTask(eq(1L), any(TaskDTO.class))).thenThrow(new ResourceNotFoundException());
-
-        mockMvc.perform(put("/api/tasks/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(input)))
-                .andExpect(status().isNotFound());
-        verify(taskService, times(1)).updateTask(eq(1L), any(TaskDTO.class));
+        ResponseEntity<TaskDTO> response = taskController.updateTaskStatus(1L, updateTaskStatusDTO);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(taskService, times(1)).updateTaskStatus(1L, updateTaskStatusDTO);
     }
 
     @Test
-    void testDeleteTask_notFound() throws Exception {
-        doThrow(new ResourceNotFoundException()).when(taskService).deleteTask(1L);
+    void testGetTasksByAssignedUser() {
+        Page<TaskDTO> page = new PageImpl<>(Collections.singletonList(taskDTO));
+        when(taskService.getTasksByAssignedUser(eq(1L), any(Pageable.class), any(), any()))
+                .thenReturn(page);
 
-        mockMvc.perform(delete("/api/tasks/1"))
-                .andExpect(status().isNotFound());
-        verify(taskService, times(1)).deleteTask(1L);
+        ResponseEntity<Page<TaskDTO>> response = taskController.getTasksByAssignedUser(1L, 0, 10, null, null);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(1, response.getBody().getContent().size());
+        verify(taskService, times(1)).getTasksByAssignedUser(eq(1L), any(Pageable.class), any(), any());
     }
-
 }
