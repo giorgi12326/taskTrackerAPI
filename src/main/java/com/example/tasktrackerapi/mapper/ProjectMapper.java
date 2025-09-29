@@ -3,11 +3,19 @@ package com.example.tasktrackerapi.mapper;
 import com.example.tasktrackerapi.dtos.ProjectDTO;
 import com.example.tasktrackerapi.entity.Project;
 import org.mapstruct.Mapper;
+import org.mapstruct.MappingTarget;
 
 import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface ProjectMapper {
+
     ProjectDTO toDto(Project project);
+
     List<ProjectDTO> toDtos(List<Project> projects);
+
+    Project toEntity(ProjectDTO projectDTO);
+
+    void updateEntity(ProjectDTO dto, @MappingTarget Project entity);
+
 }

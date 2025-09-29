@@ -1,0 +1,8 @@
+package com.example.tasktrackerapi.exeption;
+
+
+public class ResourceNotFoundException extends RuntimeException {
+    public ResourceNotFoundException() {
+        super("Resource not found");
+    }
+}
