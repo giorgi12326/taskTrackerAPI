@@ -29,7 +29,6 @@ public class TaskService {
     private final UserRepository userRepository;
     private final UserService userService;
 
-
     public Page<TaskDTO> getTasks(Pageable pageable, TaskStatus status, TaskPriority priority) {
         Page<Task> tasks;
 
@@ -61,7 +60,7 @@ public class TaskService {
     @Transactional
     public TaskDTO createTask(TaskCreateDTO taskDTO) {
         Task task = taskMapper.toEntity(taskDTO);
-        ProjectOrTaskOwnerOrAdminValidation(task);
+        System.out.println(task.getTitle());
 
         Project project = projectRepository.findById(taskDTO.getProjectId())
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id " + taskDTO.getProjectId()));
@@ -71,6 +70,7 @@ public class TaskService {
 
         task.setAssignedUser(user);
         task.setProject(project);
+        ProjectOrTaskOwnerOrAdminValidation(task);
 
         Task saved = taskRepository.save(task);
         return taskMapper.toDto(saved);

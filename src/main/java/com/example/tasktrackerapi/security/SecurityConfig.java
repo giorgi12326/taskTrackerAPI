@@ -32,23 +32,23 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(request -> {
-                    request
-                            .requestMatchers(
-                                    "/api/auth/login",
-                                    "/api/auth/register",
-                                    "/swagger-ui/**",
-                                    "/v3/api-docs",
-                                    "/v3/api-docs/**",
-                                    "/swagger-ui.html"
-                            ).permitAll()
+            .csrf(AbstractHttpConfigurer::disable)
+            .authorizeHttpRequests(request -> {
+                request
+                        .requestMatchers(
+                                "/api/auth/login",
+                                "/api/auth/register",
+                                "/swagger-ui/**",
+                                "/v3/api-docs",
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
 
-                            .requestMatchers("/api/projects/**").hasAnyRole("MANAGER", "ADMIN")
+                        .requestMatchers("/api/projects/**").hasAnyRole("MANAGER", "ADMIN")
 
-                            .anyRequest().authenticated();
-                })
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                        .anyRequest().authenticated();
+            })
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

@@ -62,8 +62,7 @@ class TaskControllerTest {
         taskAssignmentDTO.setTaskId(1L);
         taskAssignmentDTO.setUserId(2L);
 
-        updateTaskStatusDTO = new UpdateTaskStatusDTO();
-        updateTaskStatusDTO.setStatus(TaskStatus.IN_PROGRESS);
+        updateTaskStatusDTO = new UpdateTaskStatusDTO(TaskStatus.IN_PROGRESS);
     }
 
     @Test

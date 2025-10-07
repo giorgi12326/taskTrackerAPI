@@ -4,6 +4,7 @@ import com.example.tasktrackerapi.dtos.ProjectCreateDTO;
 import com.example.tasktrackerapi.dtos.ProjectDTO;
 import com.example.tasktrackerapi.exeption.GlobalExceptionHandler;
 import com.example.tasktrackerapi.exeption.ResourceNotFoundException;
+import com.example.tasktrackerapi.security.JwtUtil;
 import com.example.tasktrackerapi.service.ProjectService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -102,7 +103,6 @@ class ProjectControllerTest {
     @Test
     void testUpdateProject_NotFound() throws Exception {
         when(projectService.updateProject(1L, projectCreateDTO)).thenThrow(new ResourceNotFoundException("Project not found"));
-
         mockMvc.perform(put("/api/projects/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(projectCreateDTO)))

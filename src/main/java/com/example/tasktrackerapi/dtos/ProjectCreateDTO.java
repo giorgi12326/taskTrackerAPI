@@ -15,10 +15,10 @@ public class ProjectCreateDTO {
 
     @NotBlank(message = "Project name must not be blank")
     @Size(max = 100)
-    private String name;
+    String name;
 
     @Size(max = 500)
-    private String description;
+    String description;
 
-    private Long ownerId;
+    Long ownerId;
 }

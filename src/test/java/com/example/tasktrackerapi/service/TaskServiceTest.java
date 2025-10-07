@@ -166,8 +166,7 @@ class TaskServiceTest {
     void testUpdateTaskStatus_Success() {
         User admin = User.builder().id(2L).email("admin@test.com").role(User.Role.ADMIN).build();
 
-        UpdateTaskStatusDTO dto = new UpdateTaskStatusDTO();
-        dto.setStatus(TaskStatus.IN_PROGRESS);
+        UpdateTaskStatusDTO dto = new UpdateTaskStatusDTO(TaskStatus.IN_PROGRESS);
 
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
         when(userService.getCurrentUserEmail()).thenReturn("admin@test.com");
@@ -181,8 +180,7 @@ class TaskServiceTest {
 
     @Test
     void testUpdateTaskStatus_Unauthorized() {
-        UpdateTaskStatusDTO dto = new UpdateTaskStatusDTO();
-        dto.setStatus(TaskStatus.IN_PROGRESS);
+        UpdateTaskStatusDTO dto = new UpdateTaskStatusDTO(TaskStatus.IN_PROGRESS);
 
         // Task is assigned to owner@test.com
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));

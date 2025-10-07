@@ -4,6 +4,7 @@ import com.example.tasktrackerapi.dtos.ProjectCreateDTO;
 import com.example.tasktrackerapi.dtos.ProjectDTO;
 import com.example.tasktrackerapi.entity.Project;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
 import java.util.List;
@@ -18,8 +19,6 @@ public interface ProjectMapper {
     Project toEntity(ProjectDTO projectDTO);
 
     Project toEntity(ProjectCreateDTO projectDTO);
-
-    void updateEntity(ProjectDTO dto, @MappingTarget Project entity);
 
     void updateEntity(ProjectCreateDTO dto, @MappingTarget Project entity);
 
